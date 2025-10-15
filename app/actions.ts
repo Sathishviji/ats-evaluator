@@ -12,7 +12,6 @@ const apiKey = process.env.OPENAI_API_KEY;
 
 export async function analyzeResume(formData: FormData) {
   try {
-    // Get files from form data
     const resumeFile = formData.get("resume") as File;
     const jobDescFile = formData.get("jobDescription") as File;
 
@@ -23,7 +22,6 @@ export async function analyzeResume(formData: FormData) {
       };
     }
 
-    // Extract text from files
     const resumeText = await extractTextFromFile(resumeFile);
     const jobDescText = await extractTextFromFile(jobDescFile);
 
@@ -34,7 +32,6 @@ export async function analyzeResume(formData: FormData) {
       };
     }
 
-    // Check if the text is too short
     if (resumeText.length < 50 || jobDescText.length < 50) {
       return {
         success: false,
@@ -42,13 +39,10 @@ export async function analyzeResume(formData: FormData) {
       };
     }
 
-    // Generate a unique ID for this analysis
     const analysisId = uuidv4();
 
-    // Perform the analysis using OpenAI
     const analysis = await performAnalysis(resumeText, jobDescText);
 
-    // Store the analysis results
     const payload = {
       id: analysisId,
       timestamp: new Date().toISOString(),
@@ -64,17 +58,7 @@ export async function analyzeResume(formData: FormData) {
       JSON.stringify(payload),
       "EX",
       60 * 60 * 1
-    ); // Optional: expires in 24h
-
-    /*analysisStore.set(analysisId, {
-      id: analysisId,
-      timestamp: new Date().toISOString(),
-      resumeFilename: resumeFile.name,
-      jobDescFilename: jobDescFile.name,
-      resumeText,
-      jobDescText,
-      analysis,
-    });*/
+    ); 
 
     console.log(redis);
 
@@ -93,18 +77,13 @@ export async function analyzeResume(formData: FormData) {
   }
 }
 
-/*export async function getAnalysisById(id: string) {
-  return analysisStore.get(id) || null
-}*/
-
 export async function getAnalysisById(id: string) {
   const result = await redis.get(`analysis:${id}`);
   return result ? JSON.parse(result) : null;
 }
 
 export async function extractTextFromFile(file: File): Promise<string> {
-  // For simplicity, we're just reading text files
-  // In a real app, you'd use libraries to extract text from PDFs, DOCs, etc.
+
   try {
     const text = await file.text();
     return text;
@@ -114,18 +93,15 @@ export async function extractTextFromFile(file: File): Promise<string> {
   }
 }
 
-// Helper function to extract JSON from text that might contain markdown formatting
 export async function extractJsonFromText(text: string) {
-  // Remove markdown code block formatting if present
-  let cleanedText = text;
+    let cleanedText = text;
 
-  // Check if the response is wrapped in markdown code blocks
+  
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch && codeBlockMatch[1]) {
     cleanedText = codeBlockMatch[1].trim();
   }
 
-  // Try to find JSON object in the text
   const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     return jsonMatch[0];
@@ -136,7 +112,7 @@ export async function extractJsonFromText(text: string) {
 
 export async function performAnalysis(resumeText: string, jobDescText: string) {
   try {
-    // Truncate texts if they're too long to avoid token limits
+    
     const maxLength = 4000;
     const truncatedResumeText =
       resumeText.length > maxLength
